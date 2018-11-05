@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title></title>
+    <meta charset="utf-8">
+    <meta name="author" content="Dr. Dario Strbenac and Dr. Shila Ghazanfar   School of Mathematics and Statistics, University of Sydney, N.S.W, Australia" />
+    <meta name="date" content="2018-11-29" />
+    <link href="ClassifyRtutorial_files/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <link rel="stylesheet" href="styling/sydneyFonts.css" type="text/css" />
+    <link rel="stylesheet" href="styling/sydneyTheme.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# <div style="white-space: pre-line;">Classification for High-dimensional Biomedical Data
+Utilising ClassifyR</div>
+### Dr. Dario Strbenac and Dr. Shila Ghazanfar <br> School of Mathematics and Statistics, University of Sydney, N.S.W, Australia
+### 29 November 2018
+
+---
+
+
+class: segue-red
+
+# Part 1: Software Design and Features
+
+---
+
+## Motivation for Development
+
+* A standardised form of cross-validation is not provided by a standard R installation. Often, researchers code their own cross-validation loop for each project, allowing opportunities for implementation inconsistencies to occur.
+
+--
+
+* A few frameworks have been developed (e.g. `MCRestimate`, `MLInterfaces`, `caret`) but their focus is on classification, so evaluation of the features and predictions is not comprehensive.
+
+--
+
+* Input formats of existing classification frameworks don’t seamlessly handle new data containers for omics data sets, such as `MultiAssayExperiment`.
+
+--
+
+* ClassifyR provides a standardised cross-validation framework with a focus on biologically motivated performance evaluation and seamlessly operates on `DataFrame` and `MultiAssayExperiment` S4 containers across mulitple cores using `BiocParallel` functionality.
+
+---
+
+## Varieties of Data
+
+Three kinds of data sets can be used as input.
+
+.center[
+![](images/dataTypesSingle.png)
+]
+
+---
+
+.center[
+![](images/dataTypesMulti.png)
+]
+
+---
+
+## DataFrame Container
+
+`ClassifyR` sends the data set or subsets of it when applicable to feature selection and classification functions as a `DataFrame`. Either the input data is a `DataFrame` or is converted into one without loss of information.
+
+.center[
+![](images/matrixToDataFrame.png)
+]
+
+---
+
+## DataFrame Container
+
+.center[
+![](images/MAEtoDataFrame.png)
+]
+
+
+---
+## Cross-validation Overview
+
+* Cross-validation is the procedure of selecting features and training a classifier on a set of samples and making predictions on a distinct set of samples.
+
+--
+
+* The function runTests manages cross-validation. `runTests` repeatedly calls `runTest` to perform a single iteration of training and testing.
+
+--
+
+* `runTest` may be used directly for a single training set and a single test set, an experimental design which some published studies have.
+
+--
+
+* There are many cross-validation designs commonly used in practice. `runTests` accepts a variety of customisations for the schemes.
+
+---
+## Cross-validation: Repeated Permute and *k*-Fold
+
+The order of samples is repeatedly permuted and they are divided into *k* approximately equally-sized groups. Each group is used as the test set once. When complete, each sample is predicted as many times as the number of repetititons of sample permutation.
+
+.center[
+![](images/repeatFold.png)
+]
+
+This is the default scheme of `runTests`. By default, 100 permutations are each partitioned into five folds.
+
+---
+## Cross-validation: Repeated Permute and Split
+
+The order of samples is repeatedly permuted and they are divided into two groups. Only one group is used as the test set (default: 25% of samples). When complete, each sample is predicted approximately as many times as the number of repetititons `\(\times\)` test set percentage.
+
+.center[
+![](images/permuteSplit.png)
+]
+
+---
+## Cross-validation: Leave-`k`-Out
+
+All possible combinations of *k* samples are chosen from all *n* samples to form the test set. Default value of *k* is 2.
+
+.center[
+![](images/leave2out.png)
+]
+
+For a moderately sized dataset, any value of *k* &gt; 3 will not complete in a reasonable amount of time.
+
+---
+## Cross-validation: Leave-`k`-Out
+
+For *k* = 1, each sample is predicted once.
+
+For *k* = 2, each sample is predicted `\(n-1\)` times.
+
+For *k* = 3, each sample is predicted `\((n-1) \times (n-2) / 2\)` times.
+
+---
+## Cross-validation: Ordinary k-fold
+
+The samples are divided into *k* approximately equally-sized groups. Each group is used as the test set once. Default *k* is 5.
+
+.center[
+![](images/ordinaryK.png)
+]
+
+Because each sample is predicted once, there's no estimate of class prediction variability.
+
+---
+## Types of Change
+
+A change between classes of mean, variability or distribution may be informative for predicting classes.
+
+.center[
+![](images/DMDVDD.png)
+]
+
+
+---
+## Functions for Feature Selection
+
+There are numerous functions provided for popular feature selection approaches. Feature selection by the included functions is typically based on a ranking of feaures, followed by choosing the top *p* features which give the best resubstitution error rate.
+
+.center[
+![](images/providedSelection.png)
+]
+
+---
+## Wrappers for Classification
+
+There are numerous function implementing or wrapping popular classifiers.
+
+.center[
+![](images/providedClassifiers.png)
+]
+
+---
+## Functions for Network-based Classification
+
+Biological features don't work in isolation but are a part of large networks. Some common network-based classification algorithms are included with ClassifyR.
+
+.center[
+![](images/networkFunctions.png)
+]
+
+---
+## Classification Performance Evaluation
+
+* Feature selection stability evaluates whether the selected features are consistent between iterations of cross validation.
+
+* Many of the typical classification metrics may be calculated. Examples are accuracy, error rate, ROC plot. Most are applicable for any number of classes greater than two.
+
+* **Sample-wise** accuracy and error-rate calculation allows the identification of samples which are consistently misclassified within a classification or across different classifications.
+
+---
+class: segue-red
+
+# Part 2: Application to Prognosis of Melanoma Patients
+
+---
+
+## Data Set Introduction
+
+* 32 metastatic melanoma patients had their cancer analysed by SWATH mass spectrometry.
+
+* 18 patients were categorised as *good* prognosis (survived more than four years) and 14 patients were categorised as *poor* prognosis (died less than two years).
+
+.center[
+![](images/melanomaArticle.png)
+]
+
+* Protein abundance data is originally Supplementary Table S5b.
+
+---
+
+## Topic
+
+Information.
+
+Hallmarks gene sets: Broad Institute MSigDB version 6.2.
+BioPlex interactor pairs: BioPlex 2.0 Architecture of the Human Interactome Defines Protein Communities and Disease Networks. Nature 545:505-509.
+
+---
+
+## Topic
+
+Information.
+
+---
+
+## Topic
+
+Information.
+
+---
+class: segue-red
+
+# Part 3: Getting Help with Usage
+
+---
+
+## Topic
+
+Bioconductor support forum, package vignette.
+
+---
+
+# Acknowledgements
+
+Funding, research team.
+    </textarea>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false,
+"ratio": "16:9"
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function() {
+  var d = document, s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})();</script>
+
+<script>
+(function() {
+  var i, text, code, codes = document.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+})();
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
