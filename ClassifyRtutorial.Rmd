@@ -94,7 +94,7 @@ Three kinds of data sets can be used as input.
 ---
 ## Cross-validation: Repeated Permute and *k*-Fold
 
-The order of samples is repeatedly permuted and they are divided into *k* approximately equally-sized groups. Each group is used as the test set once. When complete, each sample is predicted as many times as the number of repetititons of sample permutation.
+The order of samples is repeatedly permuted and they are divided into *k* approximately equally-sized groups. Each group is used as the test set once. When complete, each sample is predicted as many times as the number of repetitions of sample permutation.
 
 .center[
 ![](images/repeatFold.png)
@@ -105,7 +105,7 @@ This is the default scheme of `runTests`. By default, 100 permutations are each 
 ---
 ## Cross-validation: Repeated Permute and Split
 
-The order of samples is repeatedly permuted and they are divided into two groups. Only one group is used as the test set (default: 25% of samples). When complete, each sample is predicted approximately as many times as the number of repetititons $\times$ test set percentage.
+The order of samples is repeatedly permuted and they are divided into two groups. Only one group is used as the test set (default: 25% of samples). When complete, each sample is predicted approximately as many times as the number of repetitions $\times$ test set percentage.
 
 .center[
 ![](images/permuteSplit.png)
@@ -155,7 +155,7 @@ A change between classes of mean, variability or distribution may be informative
 ---
 ## Functions for Feature Selection
 
-There are numerous functions provided for popular feature selection approaches. Feature selection by the included functions is typically based on a ranking of feaures, followed by choosing the top *p* features which give the best resubstitution error rate.
+There are numerous functions provided for popular feature selection approaches. Feature selection by the included functions is typically based on a ranking of features, followed by choosing the top *p* features which give the best resubstitution error rate.
 
 .center[
 ![](images/providedSelection.png)
@@ -164,7 +164,7 @@ There are numerous functions provided for popular feature selection approaches. 
 ---
 ## Wrappers for Classification
 
-There are numerous function implementing or wrapping popular classifiers.
+There are a variety of functions implementing or wrapping popular classifiers.
 
 .center[
 ![](images/providedClassifiers.png)
@@ -173,7 +173,7 @@ There are numerous function implementing or wrapping popular classifiers.
 ---
 ## Functions for Network-based Classification
 
-Biological features don't work in isolation but are a part of large networks. Some common network-based classification algorithms are included with ClassifyR.
+Biological features don't work in isolation but are a part of large networks. Some common network-based classification algorithms are included with `ClassifyR`.
 
 .center[
 ![](images/networkFunctions.png)
