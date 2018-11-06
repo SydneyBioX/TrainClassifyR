@@ -1,7 +1,6 @@
 ---
-title: |
-       | Classification for High-dimensional Biomedical Data
-       | Utilising ClassifyR
+title: Classification for High-dimensional Biomedical Data
+       Utilising ClassifyR
 author: "Dr. Dario Strbenac and Dr. Shila Ghazanfar <br>
          School of Mathematics and Statistics, University of Sydney, N.S.W, Australia"
 date: "29 November 2018"
@@ -59,7 +58,7 @@ Three kinds of data sets can be used as input.
 
 ## DataFrame Container
 
-`ClassifyR` sends the data set or subsets of it when applicable to feature selection and classification functions as a `DataFrame`. Either the input data is a `DataFrame` or is converted into one without loss of information.
+`ClassifyR` sends the data set (or subsets of it) to feature selection and classification functions as a `DataFrame`. Either the input data is a `DataFrame` or is converted into one without loss of information.
 
 .center[
 ![](images/matrixToDataFrame.png)
@@ -120,7 +119,7 @@ All possible combinations of *k* samples are chosen from all *n* samples to form
 ![](images/leave2out.png)
 ]
 
-For a moderately sized dataset, any value of *k* > 3 will not complete in a reasonable amount of time.
+For a moderately sized data set, any value of *k* > 3 will not complete in a reasonable amount of time.
 
 ---
 ## Cross-validation: Leave-`k`-Out
@@ -180,6 +179,23 @@ Biological features don't work in isolation but are a part of large networks. So
 ]
 
 ---
+
+## Parameter Container Classes
+
+A list of instances of parameter classes is provided to `runTests` to be applied to each iteration of cross validation. They specify the kind of data transformation, feature selection and classification to do.
+
+1. `TransformParams` (optional): The first parameter is a function which transforms the values somehow. For example, `transParams <- TransformParams(subtractFromLocation)`.
+--
+<br>
+2. `SelectParams` (optional): The first parameter is a function which returns a subset of feature names. For example, `selParams <- SelectParams(tTestSelection)`.
+--
+<br>
+3. `TrainParams` : The first parameter is a function which takes as input a `DataFrame` and either a factor vector of classes or a `DataFrame` column name containing them and trains a classifier. It might also do the predictions on the test set and accept the test set in the third parameter position.<br>For example, `trainParams <- TrainParams(naiveBayesKernel)`.
+--
+<br>
+4. `PredictParams` : The first parameter is either a function which takes as input a trained model followed by the test set `DataFrame` and predicts classes and/or class scores or `NULL` if the training function also makes predictions. For example, `predParams <- PredictParams(NULL)`.
+
+---
 ## Classification Performance Evaluation
 
 * Feature selection stability evaluates whether the selected features are consistent between iterations of cross validation.
@@ -235,13 +251,41 @@ class: segue-red
 
 ---
 
-## Topic
+## Vignettes
 
-Bioconductor support forum, package vignette.
+* A fully worked example on a recent asthma classification data set (*Scientific Reports*, 2018) using a couple of different classifiers and a variety of performance metrics is provided.
+
+* A demonstration of how to create a wrapper function for the *k* Nearest Neighbours function.
+
+```{r, eval = FALSE}
+browseVignettes("ClassifyR")
+```
+
+.center[
+![](images/vignetteList.png)
+]
+
+---
+
+## Support Forum
+
+A good way to ask questions and receive answers that may be useful to others.
+
+.center[
+![](images/forum.png)
+]
+
+.center[Visit <a href="http://support.bioconductor.org" target="_blank">http://support.bioconductor.org</a>]
 
 ---
 
 # Acknowledgements
 
 Funding, research team.
+
+---
+
+# References
+
+Journal articles.
 
