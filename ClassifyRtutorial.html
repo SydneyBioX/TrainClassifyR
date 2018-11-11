@@ -6,8 +6,8 @@
     <meta name="author" content="Dr. Dario Strbenac and Dr. Shila Ghazanfar   School of Mathematics and Statistics, University of Sydney, N.S.W, Australia" />
     <meta name="date" content="2018-11-29" />
     <link href="ClassifyRtutorial_files/remark-css-0.0.1/default.css" rel="stylesheet" />
-    <link rel="stylesheet" href="styling/sydneyFonts.css" type="text/css" />
-    <link rel="stylesheet" href="styling/sydneyTheme.css" type="text/css" />
+    <link rel="stylesheet" href="styling\sydneyFonts.css" type="text/css" />
+    <link rel="stylesheet" href="styling\sydneyTheme.css" type="text/css" />
   </head>
   <body>
     <textarea id="source">
@@ -19,6 +19,16 @@ class: center, middle, inverse, title-slide
 
 ---
 
+
+## Roadmap
+
+* 30 mins - Introduction to ClassifyR and description of workshop data
+
+* 50 mins - Interactive session using ClassifyR
+
+* 10 mins - Wrap up and reflection
+
+---
 
 class: segue-red
 
@@ -225,20 +235,130 @@ class: segue-red
 ![](images/melanomaArticle.png)
 ]
 
-* Protein abundance data is originally Supplementary Table S5b.
+* Protein abundance data is originally Supplementary Table S5b. [Link to paper.](https://www.nature.com/articles/s41416-018-0227-2)
 
 ---
 
-## Topic
+## Formatted data
+
+* RData file available in the [Github Repository](https://github.com/SydneyBioX/TrainClassifyR) in 'data' folder, [direct link to RData here](https://github.com/SydneyBioX/TrainClassifyR/blob/master/data/melanomaSWATH.RData).
+
+--
+
+
+```r
+suppressMessages(library(ClassifyR))
+load("data/melanomaSWATH.RData")
+ls()
+```
+
+```
+## [1] "classes"      "measurements"
+```
+
+```r
+table(classes)
+```
+
+```
+## classes
+## good poor 
+##   18   14
+```
+
+```r
+dim(measurements)
+```
+
+```
+## [1] 1877   32
+```
+
+---
+
+## External biological information
+
+* Hallmarks gene sets: Broad Institute MSigDB version 6.2.
+
+* BioPlex interactor pairs: BioPlex 2.0 Architecture of the Human Interactome Defines Protein Communities and Disease Networks. Nature 545:505-509.
+
+Both files are available in the [Github Repository](https://github.com/SydneyBioX/TrainClassifyR) in 'databases' folder.
+
+---
+
+## Task
+
+The aim is to build classification models to predict *prognosis*, and to estimate the error rate using cross-validation.
+
+The classification model types include:
+
+--
+
+* Differential means 
+
+--
+
+* Differential variability 
+
+--
+
+* Differential distribution
+
+--
+
+* Differential network
+
+--
+
+Compare the cross-validation error rates between these methods.
+
+Follow the [Activity document]() available online for this Part.
+
+---
+
+## Differential means
+
+
+```r
+plotFeatureClasses(measurements, classes, "PMEL_HUMAN", dotBinWidth = 0.2)
+```
+
+![](ClassifyRtutorial_files/figure-html/unnamed-chunk-2-1.png)&lt;!-- --&gt;
+
+---
+
+
+```r
+plotFeatureClasses(measurements, classes, "ITAV_HUMAN", dotBinWidth = 0.2)
+```
+
+![](ClassifyRtutorial_files/figure-html/unnamed-chunk-3-1.png)&lt;!-- --&gt;
+
+---
+
+
+```r
+plotFeatureClasses(measurements, classes, "ICAM1_HUMAN", dotBinWidth = 0.2)
+```
+
+![](ClassifyRtutorial_files/figure-html/unnamed-chunk-4-1.png)&lt;!-- --&gt;
+
+
+---
+
+## Differential variability 
 
 Information.
 
-Hallmarks gene sets: Broad Institute MSigDB version 6.2.
-BioPlex interactor pairs: BioPlex 2.0 Architecture of the Human Interactome Defines Protein Communities and Disease Networks. Nature 545:505-509.
+---
+
+## Differential distribution
+
+Information.
 
 ---
 
-## Topic
+## Differential network
 
 Information.
 
@@ -292,7 +412,9 @@ Funding, research team.
 
 # References
 
-Journal articles.
+* Dario Strbenac, Graham J. Mann, John T. Ormerod, Jean Y.H. Yang; ClassifyR: an R package for performance assessment of classification with applications to transcriptomics, Bioinformatics, Volume 31, Issue 11, 1 June 2015, Pages 1851–1853, https://doi.org/10.1093/bioinformatics/btv066
+
+* [ClassifyR on Bioconductor](https://bioconductor.org/packages/release/bioc/html/ClassifyR.html)
     </textarea>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
 <script>var slideshow = remark.create({
@@ -311,30 +433,19 @@ if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
   d.head.appendChild(s);
 })();</script>
 
-<script>
-(function() {
-  var i, text, code, codes = document.getElementsByTagName('code');
-  for (i = 0; i < codes.length;) {
-    code = codes[i];
-    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
-      text = code.textContent;
-      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
-          /^\$\$(.|\s)+\$\$$/.test(text) ||
-          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
-        code.outerHTML = code.innerHTML;  // remove <code></code>
-        continue;
-      }
-    }
-    i++;
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {
+    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
   }
-})();
+});
 </script>
 <!-- dynamically load mathjax for compatibility with self-contained -->
 <script>
 (function () {
   var script = document.createElement('script');
   script.type = 'text/javascript';
-  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  script.src  = 'https://cdn.bootcss.com/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML';
   if (location.protocol !== 'file:' && /^https?:/.test(script.src))
     script.src  = script.src.replace(/^https?:/, '');
   document.getElementsByTagName('head')[0].appendChild(script);

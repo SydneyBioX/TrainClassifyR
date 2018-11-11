@@ -16,6 +16,16 @@ output:
       ratio: '16:9'
 ---
 
+## Roadmap
+
+* 30 mins - Introduction to ClassifyR and description of workshop data
+
+* 50 mins - Interactive session using ClassifyR
+
+* 10 mins - Wrap up and reflection
+
+---
+
 class: segue-red
 
 # Part 1: Software Design and Features
@@ -221,20 +231,100 @@ class: segue-red
 ![](images/melanomaArticle.png)
 ]
 
-* Protein abundance data is originally Supplementary Table S5b.
+* Protein abundance data is originally Supplementary Table S5b. [Link to paper.](https://www.nature.com/articles/s41416-018-0227-2)
 
 ---
 
-## Topic
+## Formatted data
+
+* RData file available in the [Github Repository](https://github.com/SydneyBioX/TrainClassifyR) in 'data' folder, [direct link to RData here](https://github.com/SydneyBioX/TrainClassifyR/blob/master/data/melanomaSWATH.RData).
+
+--
+
+```{r}
+suppressMessages(library(ClassifyR))
+load("data/melanomaSWATH.RData")
+ls()
+table(classes)
+dim(measurements)
+```
+
+---
+
+## External biological information
+
+* Hallmarks gene sets: Broad Institute MSigDB version 6.2.
+
+* BioPlex interactor pairs: BioPlex 2.0 Architecture of the Human Interactome Defines Protein Communities and Disease Networks. Nature 545:505-509.
+
+Both files are available in the [Github Repository](https://github.com/SydneyBioX/TrainClassifyR) in 'databases' folder.
+
+---
+
+## Task
+
+The aim is to build classification models to predict *prognosis*, and to estimate the error rate using cross-validation.
+
+The classification model types include:
+
+--
+
+* Differential means 
+
+--
+
+* Differential variability 
+
+--
+
+* Differential distribution
+
+--
+
+* Differential network
+
+--
+
+Compare the cross-validation error rates between these methods.
+
+Follow the [Activity document]() available online for this Part.
+
+---
+
+## Differential means
+
+```{r, fig.height = 6}
+plotFeatureClasses(measurements, classes, "PMEL_HUMAN", dotBinWidth = 0.2)
+```
+
+---
+
+```{r, fig.height = 6}
+plotFeatureClasses(measurements, classes, "ITAV_HUMAN", dotBinWidth = 0.2)
+```
+
+---
+
+```{r, fig.height = 6}
+plotFeatureClasses(measurements, classes, "ICAM1_HUMAN", dotBinWidth = 0.2)
+```
+
+
+---
+
+## Differential variability 
 
 Information.
 
-Hallmarks gene sets: Broad Institute MSigDB version 6.2.
-BioPlex interactor pairs: BioPlex 2.0 Architecture of the Human Interactome Defines Protein Communities and Disease Networks. Nature 545:505-509.
+---
+
+## Differential distribution
+
+Information.
 
 ---
 
-## Topic
+## Differential network
 
 Information.
 
@@ -287,5 +377,6 @@ Funding, research team.
 
 # References
 
-Journal articles.
+* Dario Strbenac, Graham J. Mann, John T. Ormerod, Jean Y.H. Yang; ClassifyR: an R package for performance assessment of classification with applications to transcriptomics, Bioinformatics, Volume 31, Issue 11, 1 June 2015, Pages 1851–1853, https://doi.org/10.1093/bioinformatics/btv066
 
+* [ClassifyR on Bioconductor](https://bioconductor.org/packages/release/bioc/html/ClassifyR.html)
