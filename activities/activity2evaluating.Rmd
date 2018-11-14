@@ -1,7 +1,7 @@
 ---
 title: "Performance Evaluation of Classifications"
 author: "Dr Ellis Patrick, Dr Dario Strbenac, Dr Shila Ghazanfar, Prof Jean Yang"
-date: "29 June 2018"
+date: "29 November 2018"
 output:
   html_document:
     code_folding: show
@@ -15,7 +15,7 @@ output:
 
 # Activity Overview
 
-- Basic R functionality
+- Basic R functionality (Intro level)
 
 - Introducing ClassifyR
 
@@ -25,7 +25,7 @@ output:
 
 - Comparison of various classifiers
 
-- Full cross-validation laid bare
+- Full cross-validation laid bare (OPTIONAL)
 
 ```{r, echo = FALSE}
 library(knitr)
@@ -34,7 +34,7 @@ knitr::opts_chunk$set(results = "show", fig.show = "show")
 options(width = 91)
 ```
 
-# Basic R functionality {.tabset .tabset-fade .tabset-pills}
+# Basic R functionality (Intro level) {.tabset .tabset-fade .tabset-pills}
 
 To understand how to write your own cross-validation loop from scratch you will need to be able to use two R function.
 
@@ -267,11 +267,15 @@ library(ClassifyR)
 
 - The default training and prediction methods for `TrainParams` and `PredictParams` are for Diagonal Linear Discriminant Analysis (DLDA). See `?TrainParams` and `?PredictParams` for the specification.
 
-A 20 permutations and 5 folds cross-validation using default selection and classification methods is done using `runTests`. Read its documentation to understand the options available.
+A 1 permutation and 5 folds cross-validation using default selection and classification methods is done using `runTests`. Read its [documentation](https://bioconductor.org/packages/release/bioc/html/ClassifyR.html) to understand the options available.
 
 ```{r}
-classifiedDM <- runTests(measurementsVS, classes, "AML", "Changes in Means",
-                         permutations = 20, seed = 2018)
+classifiedDM <- runTests(measurements = measurementsVS, 
+                         classes = classes, 
+                         datasetName = "AML",
+                         classificationName = "Changes in Means",
+                         permutations = 1,
+                         seed = 2018)
 classifiedDM
 ```
 
@@ -311,8 +315,10 @@ The distribution of gene expression per class can be quickly visualised with `pl
 **Hint**: The `targets` parameter of `plotFeatureClasses` specifies one or more features to be plotted.
 
 ```{r, fig.height = 4, fig.width = 7, fig.align = "center"}
-plotFeatureClasses(measurementsVS, classes, targets = names(frequencies)[1],
-                   whichNumericPlots = "density", xAxisLabel = "RNA-seq Abundance")
+plotFeatureClasses(measurementsVS, classes, 
+                   targets = names(frequencies)[1],
+                   whichNumericFeaturePlots = "density",
+                   xAxisLabel = "RNA-seq Abundance")
 ```
 
 The gene is visibly differentially expressed between resistant and sensitive patients.
@@ -323,7 +329,7 @@ ZFY is a gene on the Y chromosome which only males have. Plot its expression wit
 
 ```{r, fig.height = 4, fig.width = 7, fig.align = "center"}
 plotFeatureClasses(measurementsVS, sampleInfo[, "Gender"], targets = "ZFY",
-                   whichNumericPlots = "density", xAxisLabel = "RNA-seq Abundance")
+                   whichNumericFeaturePlots = "density", xAxisLabel = "RNA-seq Abundance")
 ```
 
 The abundance grouped by gender is as expected.
@@ -360,12 +366,16 @@ predictParams <- PredictParams(NULL, weighted = "unweighted", weight = "height d
 
 ## DD Cross-validated Classification
 
-As was done for DM classification, 20 permutations and 5 fold cross-validation is done. It takes substantially longer to complete than DM classification, because thousands of kernel densities are being esimated for each iteration.
+As was done for DM classification, 1 permutation and 5 fold cross-validation is done. It takes substantially longer to complete than DM classification, because thousands of kernel densities are being esimated for each iteration.
 
 ```{r}
-classifiedDD <- runTests(measurementsVS, classes, "AML", "Changes in Distributions",
+classifiedDD <- runTests(measurements = measurementsVS, 
+                         classes = classes, 
+                         datasetName = "AML", 
+                         classificationName = "Changes in Distributions",
                          params = list(selectParams, trainParams, predictParams),
-                         permutations = 20, seed = 2018)
+                         permutations = 1,
+                         seed = 2018)
 classifiedDD
 ```
 
@@ -385,9 +395,11 @@ Plot the distribution of overlaps of selected features of the DM and DD classifi
 
 ```{r, fig.align = "center", fig.width = 10, fig.height = 3}
 withinChoices <- selectionPlot(list(classifiedDM, classifiedDD),
-                               xVariable = "selectionName", xLabel = "Selection Method",
+                               xVariable = "selectionName", 
+                               xLabel = "Selection Method",
                                columnVariable = "None",
-                               boxFillColouring = "None", boxLineColouring = "None",
+                               boxFillColouring = "None", 
+                               boxLineColouring = "None",
                                rotate90 = TRUE)
 ```
 
@@ -506,7 +518,7 @@ classifiedDM <- calcCVperformance(classifiedDM, "macro precision")
 performance(classifiedDM)[["Macro Precision"]]
 ```
 
-# Full Cross-validation Laid Bare
+# Full Cross-validation Laid Bare (OPTIONAL)
 
 - Feature selection must be done inside the cross-validation loop to be fair.
 
