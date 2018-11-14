@@ -267,15 +267,18 @@ library(ClassifyR)
 
 - The default training and prediction methods for `TrainParams` and `PredictParams` are for Diagonal Linear Discriminant Analysis (DLDA). See `?TrainParams` and `?PredictParams` for the specification.
 
-A 1 permutation and 5 folds cross-validation using default selection and classification methods is done using `runTests`. Read its [documentation](https://bioconductor.org/packages/release/bioc/html/ClassifyR.html) to understand the options available.
+A 10 permutation and 5 folds cross-validation using default selection and classification methods is done using `runTests`. Read its [documentation](https://bioconductor.org/packages/release/bioc/html/ClassifyR.html) to understand the options available.
+
+- Note, if you're running on a Windows machine, ensure you set `parallelParams = SerialParam()`.
 
 ```{r}
 classifiedDM <- runTests(measurements = measurementsVS, 
                          classes = classes, 
                          datasetName = "AML",
                          classificationName = "Changes in Means",
-                         permutations = 1,
-                         seed = 2018)
+                         permutations = 10,
+                         seed = 2018,
+                         parallelParams = SerialParam())
 classifiedDM
 ```
 
@@ -360,13 +363,14 @@ Create a prediction parameter object specifying the use the height difference be
 **Hint**: Use `?naiveBayesKernel` to see the names of the parameters controlling the voting process. Specify an identity function for `getClasses`.
 
 ```{r}
-predictParams <- PredictParams(NULL, weighted = "unweighted", weight = "height difference",
-                               getClasses = function(result) result)
+predictParams <- PredictParams(NULL, weighted = "unweighted", weight = "height difference")
 ```
 
 ## DD Cross-validated Classification
 
-As was done for DM classification, 1 permutation and 5 fold cross-validation is done. It takes substantially longer to complete than DM classification, because thousands of kernel densities are being esimated for each iteration.
+As was done for DM classification, 2 permutation and 5 fold cross-validation is done. It takes substantially longer to complete than DM classification, because thousands of kernel densities are being esimated for each iteration.
+
+- Note: If you are working on a many core machine, feel free to increase the number of permutations.
 
 ```{r}
 classifiedDD <- runTests(measurements = measurementsVS, 
@@ -374,8 +378,9 @@ classifiedDD <- runTests(measurements = measurementsVS,
                          datasetName = "AML", 
                          classificationName = "Changes in Distributions",
                          params = list(selectParams, trainParams, predictParams),
-                         permutations = 1,
-                         seed = 2018)
+                         permutations = 2,
+                         seed = 2018,
+                         parallelParams = SerialParam())
 classifiedDD
 ```
 
@@ -393,6 +398,8 @@ Evaluation of these three classifiers will be made in the subsequent tutorial.
 
 Plot the distribution of overlaps of selected features of the DM and DD classifiers.
 
+- Note Windows users ensure that `parallelParams = SerialParam()` is called.
+
 ```{r, fig.align = "center", fig.width = 10, fig.height = 3}
 withinChoices <- selectionPlot(list(classifiedDM, classifiedDD),
                                xVariable = "selectionName", 
@@ -400,7 +407,8 @@ withinChoices <- selectionPlot(list(classifiedDM, classifiedDD),
                                columnVariable = "None",
                                boxFillColouring = "None", 
                                boxLineColouring = "None",
-                               rotate90 = TRUE)
+                               rotate90 = TRUE,
+                               parallelParams = SerialParam())
 ```
 
 ## Changing Elements of Saved Plots
@@ -439,7 +447,7 @@ Note that the sets of features chosen by the DM and DD classifiers have little i
 
 # Error / Accuracy of Predictions
 
-- `calcCVperformance` calculates performance metrics for `ClassifyResult` objects. 12 different metrics can be calculated.
+- `calcCVperformance` calculates performance metrics for `ClassifyResult` objects. 12 different metrics can be calculated. You can calculate these performance metrics even on external sets of actual and predicted classes with `calcExternalPerformance`.
 
 - Metrics are all applicable to data sets with two *or more* classes.
 
@@ -458,6 +466,8 @@ calcExternalPerformance(actualClasses, predictedClasses, "accuracy")
 
 For each of the three classifications done earlier, calculate the balanced error rate using `calcCVperformance`.<br>
 **Hint**: The value of the parameter named `performanceType` needs to be changed from its default, which is the ordinary error rate.
+
+- Note that Performance Measures is no longer empty after calculating balanced error rate.
 
 ```{r}
 classifiedDM <- calcCVperformance(classifiedDM, "balanced error")
@@ -482,7 +492,7 @@ errorPlot <- performancePlot(list(classifiedDM, classifiedDD),
 errorPlot + geom_hline(yintercept = 0.5, colour = "red")
 ```
 
-Note that DM classification is the only classifier which does substantially better than random.
+Note that DM classification is the only classifier which does substantially better than random, with a lower error rate.
 
 ## Sample-specific Error Rate
 
@@ -522,7 +532,7 @@ performance(classifiedDM)[["Macro Precision"]]
 
 - Feature selection must be done inside the cross-validation loop to be fair.
 
-20 sample permutation and 5 folds cross-validation of moderated t-test selection and a DLDA classifier is demonstrated. Doing this manually is time-consuming and difficult. There is no need to run the code below, but appreciate the complexity of it and the many possibilities for making errors.
+20 sample permutation and 5 folds cross-validation of moderated t-test selection and a DLDA classifier is demonstrated. *Doing this manually is time-consuming and difficult*. There is no need to run the code below, but appreciate the complexity of it and the many possibilities for making errors.
 
 ```{r, eval = FALSE}
 sampleOrdering <- lapply(1:20, function(permutation) sample(ncol(measurements)))
