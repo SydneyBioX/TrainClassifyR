@@ -1,0 +1,560 @@
+---
+title: "Performance Evaluation of Classifications"
+author: "Dr Ellis Patrick, Dr Dario Strbenac, Dr Shila Ghazanfar, Prof Jean Yang"
+date: "29 June 2018"
+output:
+  html_document:
+    code_folding: show
+    number_sections: yes
+    self_contained: yes
+    toc: true
+    toc_float: true
+    toc_depth: 1
+    theme: yeti
+---
+
+# Activity Overview
+
+- Basic R functionality
+
+- Introducing ClassifyR
+
+- Feature selection stability
+
+- Evaluation of overall error, sample-specific error, precision, recall
+
+- Comparison of various classifiers
+
+- Full cross-validation laid bare
+
+```{r, echo = FALSE}
+library(knitr)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+knitr::opts_chunk$set(results = "show", fig.show = "show")
+options(width = 91)
+```
+
+# Basic R functionality {.tabset .tabset-fade .tabset-pills}
+
+To understand how to write your own cross-validation loop from scratch you will need to be able to use two R function.
+
+## The function 'sample'
+Generate the matrix $X$ containing values 1 to 36 with 4 rows and 9 columns.
+Note: how do we make data reproducible when we are sampling ?
+
+```{r sample}
+set.seed(1234)  # set seed for reproducibility
+X <- matrix(1:36, nrow = 4)
+```
+
+(a) Randomly select 9 columns from the matrix $X$ without replacement
+
+```{r sampleA}
+index = sample(1:9, 9, replace = FALSE)
+X[, index]
+```
+
+(b) Randomly select 9 columns from the matrix $X$ with replacement. What is the difference between this and part a) ?
+
+```{r sampleB }
+index <- sample(1:9, 9, replace = TRUE)
+X[, index]
+```
+
+
+(c) Randomly select 5 columns from the matrix $X$ without replacement
+
+```{r sampleC }
+index <- sample(1:9, 5, replace = FALSE)
+X[, index]
+```
+
+(d) Randomly select $2/3$ of the columns and use these to create a data matrix that you could use as a 'learning' set. Use the remaining samples to construct a data matrix that you could use as a 'test set'.
+
+```{r sampleD}
+nL <- 9 * (2/3) ## nL == number of sample in the Learning Set
+index <- sample(1:9, nL, replace = FALSE)
+X[, index]
+```
+
+
+## The function 'for'
+
+(a) Please write some code using a *for loop* to produce the following output.
+```{r fora , echo=FALSE, include=TRUE}
+for(i in 5:10){
+  print(i)
+}
+```
+
+```{r foras}
+for(i in 5:10){
+  print(i)
+}
+```
+
+(b) Please write some code using a *for loop* to produce the following output.
+Hint: have a look at the vector **letters** in R.
+
+```{r forb , echo=FALSE, include=TRUE}
+for(i in 2:6)
+  print(letters[i])
+```
+
+```{r forbs}
+for(i in 2:6)
+  print(letters[i])
+```
+
+(c) Create a 5 x 6 matrix (of 5 rows and 6 columns). For each row and for each column, assign the value of an element in the matrix based on it's position: the product of the row number and column number.
+
+```{r forcs }
+mymat <- matrix(nrow = 5, ncol = 6)
+for(i in 1:nrow(mymat)) {
+  for(j in 1:ncol(mymat)) {
+    mymat[i, j] = i*j
+  }
+}
+mymat
+```
+
+# Introduction to cross-validation
+
+## Our data
+
+We had three data objects; `measurementsVS` had a our gene expression data, `sampleInfo` had our clinical data and `classes` had our resistance information. Most classifiers want samples as rows and features as columns, so lets transpose the gene expression data and store it in `geneData`.
+
+```{r echo=FALSE}
+load("../data/activity1objects.RData")
+```
+
+```{r}
+geneData <- t(measurementsVS)
+```
+
+## Training and test
+
+As in the previous session, we will use the training set to build a classifier and the test set to test it.  
+
+Lets start by using the `sample` function to randomly split our data into a training and test set. Randomly select $25\%$ of the samples as a test set and the remaining as learning set. Use the learning set to construct a classifier and then calculate the test-set error rate.
+
+```{r class}
+# How many samples are one quarter of our data?
+nTS <- round(nrow(geneData) * 0.25)
+c(nTS, nrow(geneData))
+
+# Create an index which select a random one quarter of the data to use as test set.
+TSindex <- sample(1:nrow(geneData), nTS)
+
+# Use this index vector to create a test set and training (Learning) set.
+LS <- geneData[-TSindex, best10T]
+TS <- geneData[TSindex, best10T]
+
+# Construct a classifier with DLDA and use it on the test data.
+
+library(sparsediscrim)
+
+# Build DLDA classifier
+DLDAclassifier <- dlda(LS, classes[-TSindex])
+
+# Use the classifier to predict classes of some new samples
+testResult <- predict(DLDAclassifier, TS)
+DLDAclasses <- testResult[["class"]]
+DLDAconfusion <- table(DLDAclasses, classes[TSindex])
+DLDAconfusion
+
+# Calculate accuracy as the number of predictions the model got correct
+sum(diag(DLDAconfusion)) / sum(DLDAconfusion)
+```
+
+## K-fold CV
+
+- Randomly divide the samples into 5 groups and calculate the 5-fold cross-validated error rate.
+
+Note: The coding exercise aims to provide foundational understanding for building and performing CV. In particular, how to construct k-folds from scratch. I am presenting one option, can you find another? Hint: [Table 1](https://bioconductor.org/packages/release/bioc/vignettes/ClassifyR/inst/doc/ClassifyR.html#comparison-to-existing-classification-frameworks) of the ClassifyR vignette is a comparison table of different frameworks.
+
+```{r kfoldCVA}
+# We can reorder our samples and split them into 5 folds as follows
+folds <- rep(1:5, length.out = nrow(geneData))
+reorderdSamples <- sample(1:nrow(geneData), nrow(geneData))
+foldlist <- split(reorderdSamples, folds)
+```
+
+**5-fold cross-validation**
+
+We will now perform 5-fold cross-validation on our data. For simplicity of illustration we will *not* include feature selection in this process and will instead use the features `best10` that we selected outside of cross-validation. *It is very important* that you include feature selection in the cross-validation in practice.
+
+```{r kfoldCVB}
+cvRes <- cvTruth <- c() ## create an empty vector to store results
+for (i in 1:5) {
+    TSindex <- foldlist[[i]]
+    LS <- geneData[-TSindex, best10T]
+    TS <- geneData[TSindex, best10T]
+
+    # Build DLDA classifier
+    DLDAclassifier <- dlda(LS, classes[-TSindex])
+
+    # Use the classifier to predict classes of some new samples
+    testResult <- predict(DLDAclassifier, TS)
+    DLDAclasses <- testResult[["class"]]
+    
+    cvRes[TSindex] <- DLDAclasses
+    cvTruth[TSindex] <- classes[TSindex]
+}
+cvRes
+cM = table(cvRes, cvTruth)  ## confusion matrix
+
+## Overall accuracy
+val = sum(diag(cM)) / length(cvRes)
+round(val, 2)
+
+## Balance error rate
+val = mean((cM[2, 1] / colSums(cM)[1]) + (cM[1, 2] / colSums(cM)[2]))
+round(val, 2)
+```
+
+# ClassifyR Framework
+
+- A *framework* for feature selection, cross-validated classification and its performance evaluation.
+
+- Some popular feature selection methods and classifiers implemented in the package.
+
+- Runs cross-validation in parallel on Windows, MacOS, Linux operating systems.
+
+- Supports numeric-only (`matrix`) data, mixed numeric-categorical (`DataFrame`) data and multi-omics data (`MultiAssayExperiment`).
+
+- Continually maintained and supported (first released in 2014).
+
+## Parameter Objects
+
+- Each stage of classification is defined by a parameter object.
+
+- The four main types of objects are `TransformParams`, `SelectParams`, `TrainParams` and `PredictParams`.
+
+- `TransformParams` and `SelectParams` are optional.
+
+## Cross-validation
+
+- The process of creating many different training and test sets is handled by `runTests`.
+
+- The `seed` option allows the specification of a number which results in cross-validations which rely on random splits to be reproduced if the code is rerun, even if it runs on multiple cores.
+
+- The result of running `runTests` is a `ClassifyResult` object, which many performance evaluation functions use.
+
+- A `ClassifyResult` object stores the class predictions and possibly also class scores as well as the features selected at each cross-validation iteration.
+
+## Parallel Processing
+
+- By default, 2 less cores than the computer has are used.
+
+- On Windows, use `parallelParams = SnowParam(workers = 8)` to use 8 cores and on Linux or MacOS use `parallelParams = MulticoreParam(workers = 8)` as an argument to achieve the same customisation.
+
+## Getting Help
+
+- Every Bioconductor package has a vignette which demonstrates the main usage on an example data set. ClassifyR's HTML vignette is available from the <a href="https://bioconductor.org/packages/release/bioc/html/ClassifyR.html" target="_blank">package's home page</a>.
+
+- The <a href="https://support.bioconductor.org/" target="_blank">Bioconductor Support Forum</a> is the best communication channel to ask questions about Bioconductor packages, such as ClassifyR.
+
+# DLDA - Differential Means Classifier for AML Resistance
+
+Load ClassifyR.
+
+```{r, message = FALSE}
+library(ClassifyR)
+```
+
+- The default feature selection method of `SelectParams` is a moderated t-test based ranking and selection of the top $p$ genes that give the best resubstitution error (considering 10, 20, ..., 100 top-ranked features). See `?SelectParams` for the specification.
+
+- The default training and prediction methods for `TrainParams` and `PredictParams` are for Diagonal Linear Discriminant Analysis (DLDA). See `?TrainParams` and `?PredictParams` for the specification.
+
+A 20 permutations and 5 folds cross-validation using default selection and classification methods is done using `runTests`. Read its documentation to understand the options available.
+
+```{r}
+classifiedDM <- runTests(measurementsVS, classes, "AML", "Changes in Means",
+                         permutations = 20, seed = 2018)
+classifiedDM
+```
+
+Note how much simpler this is than the large code segment shown earlier.
+
+- Access the chosen features by using the `features` accessor, which extracts all of the feature selections at each iteration of cross-validation. View the features chosen in folds 1 and 2 of permutation 1.<br>
+**Hint**: The features are in a list of lists. The top-level list contains one element for each iteration and the second-level list contains one element for each fold.
+
+
+```{r}
+# Permutation 1, folds 1 and 2.
+features(classifiedDM)[[1]][1:2]
+```
+
+- The `predictions` accessor gets all of the class predictions. View the first few predictions of the first permutation.<br>
+**Hint**: The predictions are stored in a list, one for each permutation and have as many rows as there are samples. Use `head` to limit the number of predictions displayed.
+
+```{r}
+# Permutation 1
+head(predictions(classifiedDM)[[1]])
+```
+
+The `distribution` function calculates the feature selection frequency of all features. Use `?distribution` to find out about it and determine the most frequently selected feature.<br>
+**Hint**: Use the `sort function` on the output of the `distribution` function.
+
+## Most Frequently Selected Feature
+
+```{r}
+frequencies <- distribution(classifiedDM, plot = FALSE)
+frequencies <- sort(frequencies, decreasing = TRUE)
+head(frequencies)
+```
+
+`r names(frequencies)[1]` is chosen `r frequencies[1]` out of 100 possible times.
+
+The distribution of gene expression per class can be quickly visualised with `plotFeatureClasses`.<br>
+**Hint**: The `targets` parameter of `plotFeatureClasses` specifies one or more features to be plotted.
+
+```{r, fig.height = 4, fig.width = 7, fig.align = "center"}
+plotFeatureClasses(measurementsVS, classes, targets = names(frequencies)[1],
+                   whichNumericPlots = "density", xAxisLabel = "RNA-seq Abundance")
+```
+
+The gene is visibly differentially expressed between resistant and sensitive patients.
+
+## Clinical Data Quality Check
+
+ZFY is a gene on the Y chromosome which only males have. Plot its expression with the gender in place of the treatment resistance classes.
+
+```{r, fig.height = 4, fig.width = 7, fig.align = "center"}
+plotFeatureClasses(measurementsVS, sampleInfo[, "Gender"], targets = "ZFY",
+                   whichNumericPlots = "density", xAxisLabel = "RNA-seq Abundance")
+```
+
+The abundance grouped by gender is as expected.
+
+# naive Bayes - Differential Distribution (DD) Classifier for AML Resistance
+
+Numerous DD selection methods are available in ClassifyR. <a href="https://bioconductor.org/packages/release/bioc/vignettes/ClassifyR/inst/doc/ClassifyR.html#provided-feature-selection-and-classification-methods" target="_blank">Section 0.9 of the vignette</a> gives an overview. For this example, Kullback-Leibler divergence will be used. Navigate to the Reference Manual (PDF) of <a href="https://bioconductor.org/packages/release/bioc/html/ClassifyR.html" target="_blank">ClassifyR</a> to see the formula.
+
+Create a selection parameter object specifying the use of Kullback-Leibler feature selection.<br>
+**Hint**: `KullbackLeiblerSelection` is the name of the function to be specified. Information about the type of location and scale calculated is documented for `...`
+
+```{r}
+selectParams <- SelectParams(KullbackLeiblerSelection,
+                             resubstituteParams = ResubstituteParams())
+```
+
+By default, the mean is the location and the standard deviation is the scale.
+
+A variety of DD classifiers are available in ClassifyR. For this example, the naive Bayes method will be used. The difference of the height (scaled by the number of samples in each class) between the kernel densities of the two classes is used by each gene to vote for one class. The class with the most votes is the predicted class of the patient.
+
+Create a training parameter object specifying the use of the naive Bayes classifier.
+
+```{r}
+trainParams <- TrainParams(naiveBayesKernel)
+```
+
+Create a prediction parameter object specifying the use the height difference between densities and unweighted voting. `naiveBayesKernel` trains a classifier and returns a factor vector of class predictions, so there is no other function used for predictions.<br>
+**Hint**: Use `?naiveBayesKernel` to see the names of the parameters controlling the voting process. Specify an identity function for `getClasses`.
+
+```{r}
+predictParams <- PredictParams(NULL, weighted = "unweighted", weight = "height difference",
+                               getClasses = function(result) result)
+```
+
+## DD Cross-validated Classification
+
+As was done for DM classification, 20 permutations and 5 fold cross-validation is done. It takes substantially longer to complete than DM classification, because thousands of kernel densities are being esimated for each iteration.
+
+```{r}
+classifiedDD <- runTests(measurementsVS, classes, "AML", "Changes in Distributions",
+                         params = list(selectParams, trainParams, predictParams),
+                         permutations = 20, seed = 2018)
+classifiedDD
+```
+
+Evaluation of these three classifiers will be made in the subsequent tutorial.
+
+# Feature Selection Stability
+
+- If the genes being selected are the same ones in most of the cross-validations, then the classifier has good stability.
+
+- `selectionPlot` provides a way to compare all pairs of gene selections within a classifier or between classifiers.
+
+- Input is a list of `ClassifyResult` objects.
+
+-  For 20 permutations and 5 folds, there are $^{100}C_2 = 4950$ overlaps to compute. Like `runTests`, `selectionPlot` may utilise multiple processors.
+
+Plot the distribution of overlaps of selected features of the DM and DD classifiers.
+
+```{r, fig.align = "center", fig.width = 10, fig.height = 3}
+withinChoices <- selectionPlot(list(classifiedDM, classifiedDD),
+                               xVariable = "selectionName", xLabel = "Selection Method",
+                               columnVariable = "None",
+                               boxFillColouring = "None", boxLineColouring = "None",
+                               rotate90 = TRUE)
+```
+
+## Changing Elements of Saved Plots
+
+- Almost all plots produced by ClassifyR are `ggplot` objects created by ggplot2.
+
+- Such objects can be customised after creation because ggplot2 uses a 'painting-over' graphics model, unlike base R graphics.
+
+Change the plot title to "Chosen Genes Overlaps".<br>
+**Hint**: Use the `ggtitle` function from ggplot2.
+
+```{r, fig.align = "center", fig.width = 10, fig.height = 3}
+library(ggplot2)
+withinChoices + ggtitle("Chosen Genes Overlaps")
+```
+
+# Feature Selection Commonality
+
+- The features being selected by different classifications can be compared.
+
+- Again, `selectionPlot` is used.
+
+Compare the overlaps in features selected between DM and DD classifiers.<br>
+**Hint**: The `comparison` parameter of `selectionPlot` controls what kind of comparison is made.
+
+```{r, fig.align = "center", fig.width = 10, fig.height = 3}
+betweenChoices <- selectionPlot(list(classifiedDM, classifiedDD),
+                                comparison = "selectionName",
+                                xVariable = "selectionName", xLabel = "Selection Method",
+                                columnVariable = "None",
+                                boxFillColouring = "None", boxLineColouring = "None",
+                                rotate90 = TRUE)
+```
+
+Note that the sets of features chosen by the DM and DD classifiers have little in common.
+
+# Error / Accuracy of Predictions
+
+- `calcCVperformance` calculates performance metrics for `ClassifyResult` objects. 12 different metrics can be calculated.
+
+- Metrics are all applicable to data sets with two *or more* classes.
+
+- `calcExternalPerformance` can be used on a pair of factor vectors of the same length. For example,
+
+```{r}
+actualClasses <- factor(c("Yes", "Yes", "No", "No", "No"))
+predictedClasses <- factor(c("Yes", "No", "No", "No", "No"))
+calcExternalPerformance(actualClasses, predictedClasses, "error")
+calcExternalPerformance(actualClasses, predictedClasses, "accuracy")
+```
+
+## Balanced Error Rate for Resistance Classification
+
+- Class sizes of resistance data set are imbalanced. Errors should be summarised by the balanced error rate.
+
+For each of the three classifications done earlier, calculate the balanced error rate using `calcCVperformance`.<br>
+**Hint**: The value of the parameter named `performanceType` needs to be changed from its default, which is the ordinary error rate.
+
+```{r}
+classifiedDM <- calcCVperformance(classifiedDM, "balanced error")
+classifiedDD <- calcCVperformance(classifiedDD, "balanced error")
+
+classifiedDM # Note that Performance Measures is no longer empty.
+```
+
+## Distribution of Balanced Error Rate
+
+`performancePlot` can be used to plot the distribution of a metric to see its stability. The set of samples was predicted 20 times by each classifier.
+
+Compare the distributions of balanced error rates of the three classifiers.<br>
+**Hint**: The value of the `performanceName` parameter needs to be changed to specify the balanced error rate.
+
+```{r, fig.width = 14, fig.height = 4}
+errorPlot <- performancePlot(list(classifiedDM, classifiedDD),
+                             performanceName = "Balanced Error Rate",
+                             boxFillColouring = "None", boxLineColouring = "None",
+                             columnVariable = "None", title = "Balanced Errors",
+                             xLabel = "Classifier", rotate90 = TRUE, plot = FALSE)
+errorPlot + geom_hline(yintercept = 0.5, colour = "red")
+```
+
+Note that DM classification is the only classifier which does substantially better than random.
+
+## Sample-specific Error Rate
+
+Calculate the sample-specific error rates for each patient.<br>
+**Hint**: Use again the function named `calcCVperformance`.
+
+```{r}
+classifiedDM <- calcCVperformance(classifiedDM, "sample error")
+classifiedDD <- calcCVperformance(classifiedDD, "sample error")
+```
+
+Plot a heatmap of sample-wise errors using `samplesMetricMap`.<br>
+**Hint**: Change the value of `showXtickLabels` to remove the sample labels from the x-axis.
+
+```{r, fig.width = 10, fig.height = 5}
+errorPlot <- samplesMetricMap(list(classifiedDM, classifiedDD),
+                              xAxisLabel = "Samples", yAxisLabel = "Classifier",
+                              showXtickLabels = FALSE)
+```
+
+DLDA is the only method which has a similar error profile in the minority and majority class.
+
+# Precision, Recall, F1 Score
+
+- Micro and macro versions of these metrics can be similarly calculated to the error rates demonstrated previously.
+
+- Use the macro version because each class makes an equal contribution to the metric, unlike for the micro version.
+
+Calculate the macro precision for the DM classifier using `calcCVperformance`.
+
+```{r}
+classifiedDM <- calcCVperformance(classifiedDM, "macro precision")
+performance(classifiedDM)[["Macro Precision"]]
+```
+
+# Full Cross-validation Laid Bare
+
+- Feature selection must be done inside the cross-validation loop to be fair.
+
+20 sample permutation and 5 folds cross-validation of moderated t-test selection and a DLDA classifier is demonstrated. Doing this manually is time-consuming and difficult. There is no need to run the code below, but appreciate the complexity of it and the many possibilities for making errors.
+
+```{r, eval = FALSE}
+sampleOrdering <- lapply(1:20, function(permutation) sample(ncol(measurements)))
+sampleFold <- rep(1:5, length.out = ncol(measurements))
+samplesFolds <- lapply(sampleOrdering, function(sample) split(sample, sampleFold))
+library(limma)
+library(sparsediscrim)
+
+results <- lapply(1:20, function(permuteIndex)
+{
+  lapply(1:5, function(foldIndex)
+  {
+    # Subsetting of measurements and classes for training and test sets
+    testIndices <- samplesFolds[[permuteIndex]][[foldIndex]]
+    trainingValues <- measurementsVS[, -testIndices]
+    trainingClasses <- classes[-testIndices]
+    testingValues <- measurementsVS[, testIndices]
+    testClasses <- classes[testIndices]
+    
+    # Ranking by moderated t-test
+    linearModel <- lmFit(trainingValues, model.matrix(~ trainingClasses))
+    linearModel <- eBayes(linearModel)
+    topFeatures <- topTable(linearModel, coef = 2, number = Inf, sort.by = "p")
+    topIndices <- match(rownames(topFeatures), rownames(measurementsVS))
+    
+    # Picking the best top-p features based on resubstitition error.
+    resubErrors <- numeric()
+    topTry <- seq(10, 100, 10)
+    resubErrors <- lapply(topTry, function(topF)
+    {
+      trained <- dlda(t(trainingValues)[, topIndices[1:topF]], trainingClasses)
+      predicted <- predict(trained, t(trainingValues)[, topIndices[1:topF]])[["class"]]
+      sum(predicted != trainingClasses)
+    })
+    topF <- topTry[which.min(resubErrors)[1]] # Smallest in case of ties.
+    
+    # Training and prediction.
+    useFeatures <- rownames(measurementsVS)[topIndices[1:topF]]
+    trained <- dlda(t(trainingValues)[, useFeatures], trainingClasses)
+    predicted <- predict(trained, t(testingValues)[, useFeatures])
+    
+    list(chosen = useFeatures,
+         predictions = data.frame(ID = colnames(testingValues),
+                                  class = predicted[["class"]]))
+  })
+})
+```
