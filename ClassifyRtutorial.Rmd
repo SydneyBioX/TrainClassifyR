@@ -217,37 +217,10 @@ A list of instances of parameter classes is provided to `runTests` to be applied
 ---
 class: segue-red
 
-# Part 2: Application to Prognosis of Melanoma Patients
+# Part 2: Practical application to AML data
 
 ---
 
-## Data Set Introduction
-
-* 32 metastatic melanoma patients had their cancer analysed by SWATH mass spectrometry.
-
-* 18 patients were categorised as *good* prognosis (survived more than four years) and 14 patients were categorised as *poor* prognosis (died less than two years).
-
-.center[
-![](images/melanomaArticle.png)
-]
-
-* Protein abundance data is originally Supplementary Table S5b. [Link to paper.](https://www.nature.com/articles/s41416-018-0227-2)
-
----
-
-## Formatted data
-
-* RData file available in the [Github Repository](https://github.com/SydneyBioX/TrainClassifyR) in 'data' folder, [direct link to RData here](https://github.com/SydneyBioX/TrainClassifyR/blob/master/data/melanomaSWATH.RData).
-
---
-
-```{r}
-suppressMessages(library(ClassifyR))
-load("data/melanomaSWATH.RData")
-ls()
-table(classes)
-dim(measurements)
-```
 
 ---
 
@@ -263,7 +236,7 @@ Both files are available in the [Github Repository](https://github.com/SydneyBio
 
 ## Task
 
-The aim is to build classification models to predict *prognosis*, and to estimate the error rate using cross-validation.
+The aim is to build classification models to predict resistance, and to estimate the error rate using cross-validation.
 
 The classification model types include:
 
@@ -281,13 +254,13 @@ The classification model types include:
 
 --
 
-* Differential network
+* Differential network (Advanced extension)
 
 --
 
 Compare the cross-validation error rates between these methods.
 
-Follow the [Activity document]() available online for this Part.
+Follow the [Activity document](https://github.com/SydneyBioX/TrainClassifyR/tree/master/activities) available online for this Part.
 
 ---
 
