@@ -17,6 +17,8 @@ output:
 
 - Basic R functionality (Intro level)
 
+- Motivational data
+
 - Introducing ClassifyR
 
 - Feature selection stability
@@ -118,11 +120,19 @@ for(i in 1:nrow(mymat)) {
 mymat
 ```
 
-# Introduction to cross-validation
+# Motivating data: Acute Myeloid Leukaemia treatment resistance
+
+- Primary therapy resistance is a major problem in acute myeloid leukemia treatment. Approximately 20-30% of younger adult patients with AML and as many as 50% of older adults are refractory to induction treatment.
+
+- Research findings are <a href="http://www.haematologica.org/content/103/3/456" target="_blank">published</a> in *Haematologica* in 2018.
+
+- The data is available from <a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE106291" target="_blank">GEO Browser</a> as 250 `txt.gz` files of gene-level read counts or a Microsoft Excel file where the gene expression values were standardised to have a mean of 0 and variance of 1.
+
+- For details on exactly how to download and process this data from GEO, see our [June local workshop notes(https://github.com/SydneyBioX/localWorkshop), in particular Activity 1. We have provided an .RData file containing the objects needed for the remainder of this workshop.
 
 ## Our data
 
-We had three data objects; `measurementsVS` had a our gene expression data, `sampleInfo` had our clinical data and `classes` had our resistance information. Most classifiers want samples as rows and features as columns, so lets transpose the gene expression data and store it in `geneData`.
+We had three data objects; `measurementsVS` is our variance stabilised gene expression data, `sampleInfo` had our clinical data and `classes` had our resistance information. Most classifiers want samples as rows and features as columns, so lets transpose the gene expression data and store it in `geneData`.
 
 ```{r echo=FALSE}
 load("../data/activity1objects.RData")
@@ -131,6 +141,13 @@ load("../data/activity1objects.RData")
 ```{r}
 geneData <- t(measurementsVS)
 ```
+
+```{r}
+head(sampleInfo)
+nrow(sampleInfo)
+```
+
+# Introduction to cross-validation
 
 ## Training and test
 
