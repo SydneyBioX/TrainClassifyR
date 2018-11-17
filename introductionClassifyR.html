@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="author" content="Dr. Dario Strbenac and Dr. Shila Ghazanfar   School of Mathematics and Statistics, University of Sydney, N.S.W, Australia" />
     <meta name="date" content="2018-11-29" />
-    <link href="ClassifyRtutorial_files/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <link href="introductionClassifyR_files/remark-css-0.0.1/default.css" rel="stylesheet" />
     <link rel="stylesheet" href="styling\sydneyFonts.css" type="text/css" />
     <link rel="stylesheet" href="styling\sydneyTheme.css" type="text/css" />
   </head>
@@ -22,17 +22,17 @@ class: center, middle, inverse, title-slide
 
 ## Roadmap
 
-* 30 mins - Introduction to ClassifyR and description of workshop data
+* 30 mins - Introduction to ClassifyR
 
-* 50 mins - Interactive session using ClassifyR
+* 50 mins - Interactive Session Classifying AML Treatment Resistance
 
-* 10 mins - Wrap up and reflection
+* 10 mins - Concluding Remarks
 
 ---
 
 class: segue-red
 
-# Part 1: Software Design and Features
+# Part 1: Introduction to ClassifyR
 
 ---
 
@@ -46,7 +46,7 @@ class: segue-red
 
 --
 
-* Input formats of existing classification frameworks don’t seamlessly handle new data containers for omics data sets, such as `MultiAssayExperiment`.
+* Input formats of existing classification frameworks don't seamlessly handle new data containers for omics data sets, such as `MultiAssayExperiment`.
 
 --
 
@@ -175,6 +175,19 @@ There are numerous functions provided for popular feature selection approaches. 
 ]
 
 ---
+## Resubstitution Error Rate for Feature Selection
+
+- Resubstitution error rate is the error rate obtained when a classifier is trained on a set of samples (training set of cross-validation) and predictions are made on the same set of samples.
+
+--
+
+- Provided functions operate by ranking features from largest to smallest difference between classes and choose the top *p* features which give the best resubstitution error rate.
+
+--
+
+- Simply a heuristic which avoids computationally expensive nested cross-validation.
+
+---
 ## Wrappers for Classification
 
 There are a variety of functions implementing or wrapping popular classifiers.
@@ -219,159 +232,16 @@ A list of instances of parameter classes is provided to `runTests` to be applied
 * **Sample-wise** accuracy and error-rate calculation allows the identification of samples which are consistently misclassified within a classification or across different classifications.
 
 ---
+
 class: segue-red
 
-# Part 2: Application to Prognosis of Melanoma Patients
+# Part 2: Interactive Session Classifying AML Treatment Resistance
 
 ---
 
-## Data Set Introduction
-
-* 32 metastatic melanoma patients had their cancer analysed by SWATH mass spectrometry.
-
-* 18 patients were categorised as *good* prognosis (survived more than four years) and 14 patients were categorised as *poor* prognosis (died less than two years).
-
-.center[
-![](images/melanomaArticle.png)
-]
-
-* Protein abundance data is originally Supplementary Table S5b. [Link to paper.](https://www.nature.com/articles/s41416-018-0227-2)
-
----
-
-## Formatted data
-
-* RData file available in the [Github Repository](https://github.com/SydneyBioX/TrainClassifyR) in 'data' folder, [direct link to RData here](https://github.com/SydneyBioX/TrainClassifyR/blob/master/data/melanomaSWATH.RData).
-
---
-
-
-```r
-suppressMessages(library(ClassifyR))
-load("data/melanomaSWATH.RData")
-ls()
-```
-
-```
-## [1] "classes"      "measurements"
-```
-
-```r
-table(classes)
-```
-
-```
-## classes
-## good poor 
-##   18   14
-```
-
-```r
-dim(measurements)
-```
-
-```
-## [1] 1877   32
-```
-
----
-
-## External biological information
-
-* Hallmarks gene sets: Broad Institute MSigDB version 6.2.
-
-* BioPlex interactor pairs: BioPlex 2.0 Architecture of the Human Interactome Defines Protein Communities and Disease Networks. Nature 545:505-509.
-
-Both files are available in the [Github Repository](https://github.com/SydneyBioX/TrainClassifyR) in 'databases' folder.
-
----
-
-## Task
-
-The aim is to build classification models to predict *prognosis*, and to estimate the error rate using cross-validation.
-
-The classification model types include:
-
---
-
-* Differential means 
-
---
-
-* Differential variability 
-
---
-
-* Differential distribution
-
---
-
-* Differential network
-
---
-
-Compare the cross-validation error rates between these methods.
-
-Follow the [Activity document]() available online for this Part.
-
----
-
-## Differential means
-
-
-```r
-plotFeatureClasses(measurements, classes, "PMEL_HUMAN", dotBinWidth = 0.2)
-```
-
-![](ClassifyRtutorial_files/figure-html/unnamed-chunk-2-1.png)&lt;!-- --&gt;
-
----
-
-
-```r
-plotFeatureClasses(measurements, classes, "ITAV_HUMAN", dotBinWidth = 0.2)
-```
-
-![](ClassifyRtutorial_files/figure-html/unnamed-chunk-3-1.png)&lt;!-- --&gt;
-
----
-
-
-```r
-plotFeatureClasses(measurements, classes, "ICAM1_HUMAN", dotBinWidth = 0.2)
-```
-
-![](ClassifyRtutorial_files/figure-html/unnamed-chunk-4-1.png)&lt;!-- --&gt;
-
-
----
-
-## Differential variability 
-
-Information.
-
----
-
-## Differential distribution
-
-Information.
-
----
-
-## Differential network
-
-Information.
-
----
-
-## Topic
-
-Information.
-
----
 class: segue-red
 
-# Part 3: Getting Help with Usage
+# Part 3: Concluding Remarks
 
 ---
 
@@ -406,15 +276,31 @@ A good way to ask questions and receive answers that may be useful to others.
 
 # Acknowledgements
 
-Funding, research team.
+.pull-left[Sydney Bioinformatics and Biometrics
+- Prof. Jean Yang
+- Dr. John Ormerod
+- Dr. Shila Ghazanfar
+- Dr. Ellis Patrick
+- Kevin Wang
+- Yingxin Lin
+]
+
+.pull-right[Melanoma Institute of Australia
+- Prof. Graham Mann
+- Dr. Sarah-Jane Schramm
+]
+
+ClassifyR version 1 was developed while Dario Strbenac was funded by an Australian Postgraduate Award and Australian Research Council DP130100488.
+&lt;br&gt;
+ClassifyR version 2 was developed while Dario Strbenac received funding from Australian Research Council DP170100654.
 
 ---
 
 # References
 
-* Dario Strbenac, Graham J. Mann, John T. Ormerod, Jean Y.H. Yang; ClassifyR: an R package for performance assessment of classification with applications to transcriptomics, Bioinformatics, Volume 31, Issue 11, 1 June 2015, Pages 1851–1853, https://doi.org/10.1093/bioinformatics/btv066
+* Dario Strbenac, Graham J. Mann, John T. Ormerod and Jean Y.H. Yang (2015) ClassifyR: an R package for performance assessment of classification with applications to transcriptomics, *Bioinformatics*, 31(11):1851-1853
 
-* [ClassifyR on Bioconductor](https://bioconductor.org/packages/release/bioc/html/ClassifyR.html)
+* Dario Strbenac, Graham J. Mann, Jean Y.H. Yang and John T. Ormerod (2016) Differential distribution improves gene selection stability and has competitive classification performance for patient survival. *Nucleic Acids Research*, 44(13):e119.
     </textarea>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
 <script>var slideshow = remark.create({
@@ -433,19 +319,30 @@ if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
   d.head.appendChild(s);
 })();</script>
 
-<script type="text/x-mathjax-config">
-MathJax.Hub.Config({
-  tex2jax: {
-    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+<script>
+(function() {
+  var i, text, code, codes = document.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
   }
-});
+})();
 </script>
 <!-- dynamically load mathjax for compatibility with self-contained -->
 <script>
 (function () {
   var script = document.createElement('script');
   script.type = 'text/javascript';
-  script.src  = 'https://cdn.bootcss.com/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
   if (location.protocol !== 'file:' && /^https?:/.test(script.src))
     script.src  = script.src.replace(/^https?:/, '');
   document.getElementsByTagName('head')[0].appendChild(script);
