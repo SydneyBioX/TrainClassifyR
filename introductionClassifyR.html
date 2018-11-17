@@ -181,11 +181,11 @@ There are numerous functions provided for popular feature selection approaches. 
 
 --
 
-- Provided functions operate by ranking features from largest to smallest difference between classes and choose the top *p* features which give the best resubstitution error rate.
+- Provided functions operate by ranking features from largest to smallest difference between classes and choose a set of the top *p* features from a range of values of *p* which gives the best resubstitution error rate.
 
 --
 
-- Simply a heuristic which avoids computationally expensive nested cross-validation.
+- Simply a heuristic which avoids computationally expensive nested cross-validation to choose features.
 
 ---
 ## Wrappers for Classification
@@ -276,19 +276,20 @@ A good way to ask questions and receive answers that may be useful to others.
 
 # Acknowledgements
 
-.pull-left[Sydney Bioinformatics and Biometrics
+.columns-2[.content-box-gray[.bold[Sydney Bioinformatics and Biometrics]
 - Prof. Jean Yang
 - Dr. John Ormerod
-- Dr. Shila Ghazanfar
+- Dr. Kaushala Jayawardana (fmr.)
+- Dr. Vivek Jayaswal (fmr.)
 - Dr. Ellis Patrick
-- Kevin Wang
-- Yingxin Lin
+- Mr. Kevin Wang
+- Ms. Yingxin Lin
 ]
 
-.pull-right[Melanoma Institute of Australia
+.content-box-gray[.bold[Melanoma Institute of Australia]
 - Prof. Graham Mann
 - Dr. Sarah-Jane Schramm
-]
+]]
 
 ClassifyR version 1 was developed while Dario Strbenac was funded by an Australian Postgraduate Award and Australian Research Council DP130100488.
 &lt;br&gt;
@@ -298,9 +299,11 @@ ClassifyR version 2 was developed while Dario Strbenac received funding from Aus
 
 # References
 
-* Dario Strbenac, Graham J. Mann, John T. Ormerod and Jean Y.H. Yang (2015) ClassifyR: an R package for performance assessment of classification with applications to transcriptomics, *Bioinformatics*, 31(11):1851-1853
+* Dario Strbenac, Graham J. Mann, John T. Ormerod and Jean Y.H. Yang (2015) [ClassifyR: an R package for performance assessment of classification with applications to transcriptomics](https://academic.oup.com/bioinformatics/article/31/11/1851/2365648), *Bioinformatics*, 31(11):1851-1853
 
-* Dario Strbenac, Graham J. Mann, Jean Y.H. Yang and John T. Ormerod (2016) Differential distribution improves gene selection stability and has competitive classification performance for patient survival. *Nucleic Acids Research*, 44(13):e119.
+* Dario Strbenac, Graham J. Mann, Jean Y.H. Yang and John T. Ormerod (2016) [Differential distribution improves gene selection stability and has competitive classification performance for patient survival](https://academic.oup.com/nar/article/44/13/e119/2457601), *Nucleic Acids Research*, 44(13):e119.
+
+* Ellis Patrick, Sarah-Jane Schramm, John T. Ormerod, Richard A. Scolyer, Graham J. Mann, Samuel Mueller, Jean Y. H. Yang (2017) [A multi-step classifier addressing cohort heterogeneity improves performance of prognostic biomarkers in three cancer types](http://www.oncotarget.com/index.php?journal=oncotarget&amp;page=article&amp;op=view&amp;path%5B%5D=13203&amp;path%5B%5D=41874), *Oncotarget*, 8(2):2807-2815.
     </textarea>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
 <script>var slideshow = remark.create({

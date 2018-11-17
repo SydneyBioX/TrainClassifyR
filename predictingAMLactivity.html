@@ -430,7 +430,7 @@ dim(geneSetMatrix)</code></pre>
 selectParams &lt;- SelectParams(tTestSelection,
                              resubstituteParams = resubstituteParams)
  
-classifySets &lt;- runTests(geneSetMatrix, classes, datasetName = &quot;AML&quot;,
+classifiedSets &lt;- runTests(geneSetMatrix, classes, datasetName = &quot;AML&quot;,
                          classificationName = &quot;Hallmarks Response&quot;,
                          permutations = 1,
                          params = list(selectParams, TrainParams(),
@@ -438,7 +438,7 @@ classifySets &lt;- runTests(geneSetMatrix, classes, datasetName = &quot;AML&quot
                          )</code></pre>
 </div>
 <div id="bioplex-2.0-binary-interactions-for-a-network-based-classifier-advanced-optional" class="section level2">
-<h2><span class="header-section-number">4.2</span> BioPlex 2.0 Binary Interactions for a Network-based Classifier (Advanced, Optional)</h2>
+<h2><span class="header-section-number">4.2</span> BioPlex 2.0 Binary Interactions for a Network-based Classifier <span style="color:red;">(Advanced, Optional)</span></h2>
 <p>BioPlex is a large database of protein-protein interactions, <a href="https://www.nature.com/articles/nature22366">published in 2017</a>. If a particular gene has a larger abundance value than another gene in a particular sample could be an informative relationship for making predictions with. However, with about 20000 genes measured per experiment, exhaustively doing feature selection for all possible pairs is impractical. BioPlex can be used to reduce the complexity of feature selection by testing only the pairs of genes with experimental evidence of directly interacting with each other.</p>
 <p>This is conceptually similar to the <a href="https://academic.oup.com/bioinformatics/article/31/2/273/2365798">k-Top Scoring Pairs (k-TSP) classifier</a>, but the feature selection is biologically guided.</p>
 <pre class="r"><code>BioPlexFileURL &lt;- &quot;https://github.com/SydneyBioX/TrainClassifyR/blob/master/databases/BioPlexInteractions.tsv?raw=true&quot;
@@ -477,15 +477,15 @@ proteinPairs</code></pre>
 ##   [56552]      GATSL3       WDR24
 ##   [56553]      GATSL3     FAM164A</code></pre>
 <p>Do feature selection using <code>pairsDifferencesSelection</code> and classification using <code>kTSPclassifier</code>. Renaming of a variable created internally by feature selection during the cross-validation process in <code>runTest</code> is necessary before it can be used by <code>kTSPclassifier</code>.</p>
-<pre class="r"><code>selectParams &lt;- SelectParams(pairsDifferencesSelection, resubstituteParams = resubstituteParams,                             featurePairs = proteinPairs, subsetToSelections = FALSE)
+<pre class="r"><code>selectParams &lt;- SelectParams(pairsDifferencesSelection, resubstituteParams = resubstituteParams,                              featurePairs = proteinPairs, subsetToSelections = FALSE)
 trainParams &lt;- TrainParams(kTSPclassifier, weighted = &quot;unweighted&quot;,                         
                            intermediate = setNames(&quot;selectedFeatures&quot;, &quot;featurePairs&quot;))
 predictParams &lt;- PredictParams(NULL)
-results &lt;- runTests(measurementsVS, classes, dataset = &quot;AML&quot;,                   
-                    classificationName = &quot;BioPlex kTSP&quot;,
-                    permutations = 1,
-                    params = list(selectParams, trainParams, predictParams),
-                    parallelParams = SerialParam())</code></pre>
+classifiedPairs &lt;- runTests(measurementsVS, classes, dataset = &quot;AML&quot;,                   
+                            classificationName = &quot;BioPlex k-TSP&quot;,
+                            permutations = 1,
+                            params = list(selectParams, trainParams, predictParams),
+                            parallelParams = SerialParam())</code></pre>
 </div>
 </div>
 <div id="evaluation-of-feature-selection" class="section level1">
@@ -557,12 +557,13 @@ calcExternalPerformance(actualClasses, predictedClasses, &quot;error&quot;)</cod
 <ul>
 <li>Class sizes of resistance data set are imbalanced. Errors should be summarised by the balanced error rate.</li>
 </ul>
-<p>For each of the three classifications done earlier, calculate the balanced error rate using <code>calcCVperformance</code>. The value of the parameter named <code>performanceType</code> needs to be changed from its default, which is the ordinary error rate.</p>
+<p>For each of the classifications done earlier, calculate the balanced error rate using <code>calcCVperformance</code>. The value of the parameter named <code>performanceType</code> needs to be changed from its default, which is the ordinary error rate.</p>
 <ul>
 <li>Note that the Performance Measures field of the ClassifyResult object summary is no longer empty after calculating balanced error rate.</li>
 </ul>
 <pre class="r"><code>classifiedDM &lt;- calcCVperformance(classifiedDM, &quot;balanced error&quot;)
 classifiedDD &lt;- calcCVperformance(classifiedDD, &quot;balanced error&quot;)
+classifiedSets &lt;- calcCVperformance(classifiedSets, &quot;balanced error&quot;)
 
 classifiedDM # Note that Performance Measures is no longer empty.</code></pre>
 <pre><code>## An object of class 'ClassifyResult'.

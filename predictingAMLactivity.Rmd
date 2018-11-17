@@ -218,7 +218,7 @@ resubstituteParams <- ResubstituteParams(nFeatures = 1:10,
 selectParams <- SelectParams(tTestSelection,
                              resubstituteParams = resubstituteParams)
  
-classifySets <- runTests(geneSetMatrix, classes, datasetName = "AML",
+classifiedSets <- runTests(geneSetMatrix, classes, datasetName = "AML",
                          classificationName = "Hallmarks Response",
                          permutations = 1,
                          params = list(selectParams, TrainParams(),
@@ -226,7 +226,7 @@ classifySets <- runTests(geneSetMatrix, classes, datasetName = "AML",
                          )
 ```
 
-## BioPlex 2.0 Binary Interactions for a Network-based Classifier <span style="color:red;font-weight:bold;">(Advanced, Optional)</span>
+## BioPlex 2.0 Binary Interactions for a Network-based Classifier <span style="color:red;">(Advanced, Optional)</span>
 
 BioPlex is a large database of protein-protein interactions, [published in 2017](https://www.nature.com/articles/nature22366). If a particular gene has a larger abundance value than another gene in a particular sample could be an informative relationship for making predictions with. However, with about 20000 genes measured per experiment, exhaustively doing feature selection for all possible pairs is impractical. BioPlex can be used to reduce the complexity of feature selection by testing only the pairs of genes with experimental evidence of directly interacting with each other.
 
@@ -250,15 +250,15 @@ proteinPairs
 Do feature selection using `pairsDifferencesSelection` and classification using `kTSPclassifier`. Renaming of a variable created internally by feature selection during the cross-validation process in `runTest` is necessary before it can be used by `kTSPclassifier`.
 
 ```{r, eval = FALSE}
-selectParams <- SelectParams(pairsDifferencesSelection, resubstituteParams = resubstituteParams,                             featurePairs = proteinPairs, subsetToSelections = FALSE)
+selectParams <- SelectParams(pairsDifferencesSelection, resubstituteParams = resubstituteParams,                              featurePairs = proteinPairs, subsetToSelections = FALSE)
 trainParams <- TrainParams(kTSPclassifier, weighted = "unweighted",                         
                            intermediate = setNames("selectedFeatures", "featurePairs"))
 predictParams <- PredictParams(NULL)
-results <- runTests(measurementsVS, classes, dataset = "AML",                   
-                    classificationName = "BioPlex kTSP",
-                    permutations = 1,
-                    params = list(selectParams, trainParams, predictParams),
-                    parallelParams = SerialParam())
+classifiedPairs <- runTests(measurementsVS, classes, dataset = "AML",                   
+                            classificationName = "BioPlex k-TSP",
+                            permutations = 1,
+                            params = list(selectParams, trainParams, predictParams),
+                            parallelParams = SerialParam())
 ```
 
 # Evaluation of Feature Selection
@@ -341,13 +341,14 @@ calcExternalPerformance(actualClasses, predictedClasses, "accuracy")
 
 - Class sizes of resistance data set are imbalanced. Errors should be summarised by the balanced error rate.
 
-For each of the three classifications done earlier, calculate the balanced error rate using `calcCVperformance`. The value of the parameter named `performanceType` needs to be changed from its default, which is the ordinary error rate.
+For each of the classifications done earlier, calculate the balanced error rate using `calcCVperformance`. The value of the parameter named `performanceType` needs to be changed from its default, which is the ordinary error rate.
 
 - Note that the Performance Measures field of the ClassifyResult object summary is no longer empty after calculating balanced error rate.
 
 ```{r}
 classifiedDM <- calcCVperformance(classifiedDM, "balanced error")
 classifiedDD <- calcCVperformance(classifiedDD, "balanced error")
+classifiedSets <- calcCVperformance(classifiedSets, "balanced error")
 
 classifiedDM # Note that Performance Measures is no longer empty.
 performance(classifiedDM)
