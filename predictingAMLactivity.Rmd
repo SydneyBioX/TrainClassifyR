@@ -226,7 +226,7 @@ classifiedSets <- runTests(geneSetMatrix, classes, datasetName = "AML",
                          )
 ```
 
-## BioPlex 2.0 Binary Interactions for a Network-based Classifier <span style="color:red;">(Advanced, Optional)</span>
+## BioPlex 2.0 Binary Interactions for a Network-based Classifier <span style="color:red;">(Advanced, Time-Consuming, Optional)</span>
 
 BioPlex is a large database of protein-protein interactions, [published in 2017](https://www.nature.com/articles/nature22366). If a particular gene has a larger abundance value than another gene in a particular sample could be an informative relationship for making predictions with. However, with about 20000 genes measured per experiment, exhaustively doing feature selection for all possible pairs is impractical. BioPlex can be used to reduce the complexity of feature selection by testing only the pairs of genes with experimental evidence of directly interacting with each other.
 
@@ -234,15 +234,20 @@ This is conceptually similar to the [k-Top Scoring Pairs (k-TSP) classifier](htt
 ), but the feature selection is biologically guided.
 
 ```{r}
-BioPlexFileURL <- "https://github.com/SydneyBioX/TrainClassifyR/blob/master/databases/BioPlexInteractions.tsv?raw=true"
+BioPlexFileURL <- paste("https://github.com/SydneyBioX/TrainClassifyR/blob/master/databases/",
+                        "BioPlexInteractions.tsv?raw=true", sep = '')
 proteinPairs <- read.table(BioPlexFileURL, sep = '\t', stringsAsFactors = FALSE,
                            header = TRUE, check.names = FALSE)
 head(proteinPairs)
 ```
 
-Create a Pairs object of the interactions.
+Create a Pairs object of the relevant interactions.
 
 ```{r}
+bothInData <- proteinPairs[, "SymbolA"] %in% rownames(measurementsVS) &
+              proteinPairs[, "SymbolB"] %in% rownames(measurementsVS)
+proteinPairs <- proteinPairs[bothInData, ]
+
 proteinPairs <- Pairs(proteinPairs[, "SymbolA"], proteinPairs[, "SymbolB"])
 proteinPairs
 ```
@@ -250,7 +255,7 @@ proteinPairs
 Do feature selection using `pairsDifferencesSelection` and classification using `kTSPclassifier`. Renaming of a variable created internally by feature selection during the cross-validation process in `runTest` is necessary before it can be used by `kTSPclassifier`.
 
 ```{r, eval = FALSE}
-selectParams <- SelectParams(pairsDifferencesSelection, resubstituteParams = resubstituteParams,                              featurePairs = proteinPairs, subsetToSelections = FALSE)
+selectParams <- SelectParams(pairsDifferencesSelection, resubstituteParams = resubstituteParams,                                        featurePairs = proteinPairs, subsetToSelections = FALSE)
 trainParams <- TrainParams(kTSPclassifier, weighted = "unweighted",                         
                            intermediate = setNames("selectedFeatures", "featurePairs"))
 predictParams <- PredictParams(NULL)
@@ -361,7 +366,7 @@ performance(classifiedDM)
 Compare the distributions of balanced error rates of the three classifiers. The value of the `performanceName` parameter needs to be changed to specify the balanced error rate.
 
 ```{r, fig.width = 14, fig.height = 4}
-errorPlot <- performancePlot(list(classifiedDM, classifiedDD),
+errorPlot <- performancePlot(list(classifiedDM, classifiedDD, classifiedSets),
                              performanceName = "Balanced Error Rate",
                              boxFillColouring = "None", boxLineColouring = "None",
                              columnVariable = "None", title = "Balanced Errors",
@@ -369,7 +374,7 @@ errorPlot <- performancePlot(list(classifiedDM, classifiedDD),
 errorPlot + geom_hline(yintercept = 0.5, colour = "red")
 ```
 
-Note that DM classification is the only classifier which does substantially better than random, with an error rate below 50%.
+DM classification with either genes or gene sets does substantially better than random, with an error rate below 50%.
 
 ## Precision, Recall, F1 Score
 
@@ -392,12 +397,13 @@ Calculate the sample-specific error rates for each patient. Use again the functi
 ```{r}
 classifiedDM <- calcCVperformance(classifiedDM, "sample error")
 classifiedDD <- calcCVperformance(classifiedDD, "sample error")
+classifiedSets <- calcCVperformance(classifiedSets, "sample error")
 ```
 
 Plot a heatmap of sample-wise errors using `samplesMetricMap`. Changing the value of `showXtickLabels` to `FALSE` removes the sample labels from the x-axis, which would otherwise look cluttered.
 
 ```{r, fig.width = 10, fig.height = 5}
-errorPlot <- samplesMetricMap(list(classifiedDM, classifiedDD),
+errorPlot <- samplesMetricMap(list(classifiedDM, classifiedDD, classifiedSets),
                               xAxisLabel = "Samples", yAxisLabel = "Classifier",
                               showXtickLabels = FALSE)
 ```
