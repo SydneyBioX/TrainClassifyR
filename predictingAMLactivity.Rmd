@@ -9,7 +9,7 @@ output:
     self_contained: yes
     toc: true
     toc_float: true
-    toc_depth: 1
+    toc_depth: 2
     theme: yeti
 ---
 
@@ -42,7 +42,7 @@ options(width = 91)
 
 - For details on exactly how to download and process this data from GEO, see our [June local workshop notes](https://github.com/SydneyBioX/localWorkshop), in particular Activity 1. We have provided an RData file containing the objects needed for the remainder of this workshop.
 
-There are two data objects; `measurementsVS` has variance-stabilised gene expression data and `sampleInfo` contains the corresponding clinical data, including a patient's response status.
+There are two data objects; `measurementsVS` has variance-stabilised gene expression data and `sampleInfo` contains the corresponding clinical data, including a patient's response status. The expression data is based on counts that have been variance-stabilised by DESeq2's `vst` function.
 
 ```{r}
 load(url("https://github.com/SydneyBioX/TrainClassifyR/blob/master/data/AMLgeneClinical.RData?raw=true"))
@@ -55,6 +55,14 @@ The measurements are numeric and the clincal data is a combination of numeric an
 measurementsVS[1:5, 1:5]
 head(sampleInfo)
 ```
+
+Create a subset of features consisting of the most variable 2000 genes (ignoring samples' classes). This will be used for fast feature selection before DM and DD classifiers are used, while the whole gene expression data set will be used for the network-based classifiers.
+
+```{r}
+mostVariable <- order(apply(measurementsVS, 1, var), decreasing = TRUE)[1:2000]
+measurementsVSvarying <- measurementsVS[mostVariable, ]
+```
+
 
 ```{r}
 table(classes)
@@ -87,16 +95,13 @@ In this section, two classifiers will be built and compared. One classifies base
 
 - The default training and prediction methods for `TrainParams` and `PredictParams` are for Diagonal Linear Discriminant Analysis (DLDA). See `?TrainParams` and `?PredictParams` for the specification.
 
-A 10 permutation and 5 folds cross-validation using default selection and classification methods is done using `runTests`.
+A 8 permutations and 5 folds cross-validation using default selection and classification methods is done using `runTests`.
 
-```{r}
-classifiedDM <- runTests(measurements = measurementsVS, 
-                         classes = classes, 
-                         datasetName = "AML",
-                         classificationName = "Changes in Means",
-                         permutations = 1, # For testing tutorial.
-                         seed = 2018,
-                         parallelParams = SerialParam())
+```{r, warning = FALSE}
+classifiedDM <- runTests(measurements = measurementsVSvarying, classes = classes, 
+                         datasetName = "AML", classificationName = "Changes in Means",
+                         permutations = 8, seed = 2018,
+                         parallelParams = MulticoreParam(4))
 classifiedDM
 ```
 
@@ -128,18 +133,17 @@ frequencies <- sort(frequencies, decreasing = TRUE)
 head(frequencies)
 ```
 
-`r names(frequencies)[1]` is chosen `r frequencies[1]` out of 50 possible times.
+ADAMTS10 and ID2 are chosen 40 out of 40 possible times.
 
 The distribution of gene expression per class can be quickly visualised with `plotFeatureClasses`. The `targets` parameter of `plotFeatureClasses` specifies one or more features to be plotted.
 
 ```{r, fig.height = 4, fig.width = 7, fig.align = "center"}
-plotFeatureClasses(measurementsVS, classes, 
-                   targets = names(frequencies)[1],
+plotFeatureClasses(measurementsVS, classes, targets = "ADAMTS10",
                    whichNumericFeaturePlots = "density",
                    xAxisLabel = "RNA-seq Abundance")
 ```
 
-The gene is visibly differentially expressed between resistant and sensitive patients.
+The gene appears to be moderately differentially expressed between resistant and sensitive patients.
 
 ## naive Bayes Classification: Changes in Features' Distributions
 
@@ -168,17 +172,14 @@ Create a prediction parameter object specifying the use the height difference be
 predictParams <- PredictParams(NULL, weighted = "unweighted", weight = "height difference")
 ```
 
-As was done for DM classification, 2 permutation and 5 fold cross-validation is done. It takes longer to complete than DM classification, because thousands of kernel densities are being esimated for each iteration. If working on a machine with many processors, increasing the number of permutations is desirable.
+As was done for DM classification, 8 permutations and 5 fold cross-validation is done. It takes longer to complete than DM classification (approx. 3 minutes), because thousands of kernel densities are being esimated in each iteration. If working on a machine with many processors, increasing the number of permutations is desirable.
 
-```{r}
-classifiedDD <- runTests(measurements = measurementsVS, 
-                         classes = classes, 
-                         datasetName = "AML", 
-                         classificationName = "Changes in Distributions",
+```{r, warning = FALSE}
+classifiedDD <- runTests(measurements = measurementsVSvarying, classes = classes, 
+                         datasetName = "AML", classificationName = "Changes in Distributions",
                          params = list(selectParams, trainParams, predictParams),
-                         permutations = 1,
-                         seed = 2018,
-                         parallelParams = SerialParam())
+                         permutations = 8, seed = 2018,
+                         parallelParams = MulticoreParam(4))
 classifiedDD
 ```
 
@@ -190,9 +191,9 @@ Rather than treating each gene individually in a trained model, publicly availab
 
 ## MSigDB Hallmarks for a Gene Set Classifier
 
-Perhaps the simplest network-inspired classification is to take a collection of gene sets, summarise them by the median abundance value of their genes, and do classification with the reduced data set.
+Perhaps the simplest network-inspired classification is to take a collection of gene sets, summarise them by the mean or median abundance value of their genes, and do classification using the reduced data set.
 
-MSigDB's GMT files have a variable number of elements per line. It is easiest to import them with the `read.gmt` function provided by another R package available from Bioconductor named qusage. FeatureSetCollection is a container for storing a collection of sets and showing a nice summary of the collection.
+MSigDB's GMT files have a variable number of elements per line. It is easiest to import them with the `read.gmt` function provided by another R package available from Bioconductor named qusage. `FeatureSetCollection` is a container for storing a collection of sets and showing a nice summary of the collection.
 
 ```{r}
 library(qusage)
@@ -202,28 +203,27 @@ hallmarkSet <- FeatureSetCollection(hallmarkList)
 hallmarkSet
 ```
 
-Next, summarise the gene abundances into a single value per gene set.
+Next, summarise the gene abundances into a single value per gene set. By default, `featureSetSummary` calculates the median of all of the genes belonging to a particular gene set.
 
 ```{r}
 geneSetMatrix <- featureSetSummary(measurementsVS, featureSets = hallmarkSet)
 dim(geneSetMatrix)
+geneSetMatrix[1:5, 1:5]
 ```
 
 Input this feature-reduced matrix to any classification algorithm. For example, use t-test selection and DLDA classification. `nFeatures` must be changed from its default of considering the top 10, 20, ..., 100 ranked features because there are now only 50 features.
 
 ```{r}
 resubstituteParams <- ResubstituteParams(nFeatures = 1:10,
-                                         performanceType = "balanced error",
-                                         better = "lower")
-selectParams <- SelectParams(tTestSelection,
-                             resubstituteParams = resubstituteParams)
+                                         performanceType = "balanced error", better = "lower")
+selectParams <- SelectParams(differentMeansSelection, resubstituteParams = resubstituteParams)
  
 classifiedSets <- runTests(geneSetMatrix, classes, datasetName = "AML",
-                         classificationName = "Hallmarks Response",
-                         permutations = 1,
-                         params = list(selectParams, TrainParams(),
-                                       PredictParams())
-                         )
+                          classificationName = "Hallmarks Response", permutations = 8,
+                          params = list(selectParams, TrainParams(), PredictParams()),
+                          parallelParams = MulticoreParam(4)
+                          )
+classifiedSets
 ```
 
 ## BioPlex 2.0 Binary Interactions for a Network-based Classifier <span style="color:red;">(Advanced, Time-Consuming, Optional)</span>
@@ -241,7 +241,7 @@ proteinPairs <- read.table(BioPlexFileURL, sep = '\t', stringsAsFactors = FALSE,
 head(proteinPairs)
 ```
 
-Create a Pairs object of the relevant interactions.
+Create a Pairs object of the interactions with interactors both in the data set and the BioPlex database.
 
 ```{r}
 bothInData <- proteinPairs[, "SymbolA"] %in% rownames(measurementsVS) &
@@ -261,9 +261,10 @@ trainParams <- TrainParams(kTSPclassifier, weighted = "unweighted",
 predictParams <- PredictParams(NULL)
 classifiedPairs <- runTests(measurementsVS, classes, dataset = "AML",                   
                             classificationName = "BioPlex k-TSP",
-                            permutations = 1,
+                            permutations = 8,
                             params = list(selectParams, trainParams, predictParams),
-                            parallelParams = SerialParam())
+                            parallelParams = MulticoreParam(4))
+classifiedPairs
 ```
 
 # Evaluation of Feature Selection
@@ -278,22 +279,19 @@ Two aspects of feature selection may be evalutated; stability and commonality. S
 
 - Input is a list of `ClassifyResult` objects.
 
--  For 20 permutations and 5 folds, there are $^{100}C_2 = 4950$ overlaps to compute. Like `runTests`, `selectionPlot` may utilise multiple processors.
+-  For 8 permutations and 5 folds, there are $^{40}C_2 = 780$ set overlaps to compute. Like `runTests`, `selectionPlot` may utilise multiple processors.
 
-Plot the distribution of overlaps of selected features of the DM and DD classifiers.
+Plot the distribution of overlaps of selected features of the DM and DD classifiers. The default colouring settings are suitable when there are multiple factors of classification to compare. In this example, only the classifiers are compared and the rest of the factors are constant, so the box colouring and facetting are turned off.
 
 ```{r, fig.align = "center", fig.width = 10, fig.height = 3}
 withinChoices <- selectionPlot(list(classifiedDM, classifiedDD),
-                               xVariable = "selectionName", 
-                               xLabel = "Selection Method",
+                               xVariable = "selectionName", xLabel = "Selection Method",
                                columnVariable = "None",
-                               boxFillColouring = "None", 
-                               boxLineColouring = "None",
-                               rotate90 = TRUE,
-                               parallelParams = SerialParam())
+                               boxFillColouring = "None", boxLineColouring = "None",
+                               rotate90 = TRUE, parallelParams = MulticoreParam(4))
 ```
 
-KL divergence selection is more stable to different subsets of samples than the ordinary t-test.
+Both methods select only about 30% of the features consistently between cross-validations.
 
 ## Changing Elements of Saved Plots
 
@@ -341,6 +339,8 @@ predictedClasses <- factor(c("Yes", "No", "No", "No", "No"))
 calcExternalPerformance(actualClasses, predictedClasses, "error")
 calcExternalPerformance(actualClasses, predictedClasses, "accuracy")
 ```
+
+Note that accuracy is equivalent to 1 - error.
 
 ## Balanced Error Rate
 
@@ -392,7 +392,7 @@ performance(classifiedDM)[["Macro Precision"]]
 
 ## Sample-specific Error Rate
 
-Calculate the sample-specific error rates for each patient. Use again the function named `calcCVperformance`.
+Calculate the sample-specific error rates for each patient. Use again the function named `calcCVperformance`. This visualisation can help to identify which samples are consistently misclassified and should be further investigated.
 
 ```{r}
 classifiedDM <- calcCVperformance(classifiedDM, "sample error")

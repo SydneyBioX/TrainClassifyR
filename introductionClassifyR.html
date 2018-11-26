@@ -6,8 +6,8 @@
     <meta name="author" content="Dr. Dario Strbenac and Dr. Shila Ghazanfar   School of Mathematics and Statistics, University of Sydney, N.S.W, Australia" />
     <meta name="date" content="2018-11-29" />
     <link href="introductionClassifyR_files/remark-css-0.0.1/default.css" rel="stylesheet" />
-    <link rel="stylesheet" href="styling\sydneyFonts.css" type="text/css" />
-    <link rel="stylesheet" href="styling\sydneyTheme.css" type="text/css" />
+    <link rel="stylesheet" href="styling/sydneyFonts.css" type="text/css" />
+    <link rel="stylesheet" href="styling/sydneyTheme.css" type="text/css" />
   </head>
   <body>
     <textarea id="source">
@@ -22,11 +22,17 @@ class: center, middle, inverse, title-slide
 
 ## Roadmap
 
-* 30 mins - Introduction to ClassifyR
+* 30 minutes - Introduction to ClassifyR
 
-* 50 mins - Interactive Session Classifying AML Treatment Resistance
+  * Varieties of Input Data
+  * Cross-validation Overview
+  * Provided Feature Selection and Classification Functions
+  * Classification Performance Evaluation
+  * Support and Installation
 
-* 10 mins - Concluding Remarks
+* 50 minutes - Interactive Session Classifying AML Treatment Resistance
+
+* 10 minutes - Concluding Remarks
 
 ---
 
@@ -54,7 +60,7 @@ class: segue-red
 
 ---
 
-## Varieties of Data
+## Varieties of Input Data
 
 Three kinds of data sets can be used as input.
 
@@ -94,7 +100,7 @@ Three kinds of data sets can be used as input.
 
 --
 
-* The function runTests manages cross-validation. `runTests` repeatedly calls `runTest` to perform a single iteration of training and testing.
+* The function `runTests` manages cross-validation. `runTests` repeatedly calls `runTest` to perform a single iteration of training and testing.
 
 --
 
@@ -177,7 +183,7 @@ There are numerous functions provided for popular feature selection approaches. 
 ---
 ## Resubstitution Error Rate for Feature Selection
 
-- Resubstitution error rate is the error rate obtained when a classifier is trained on a set of samples (training set of cross-validation) and predictions are made on the same set of samples.
+- Resubstitution error rate is the error rate obtained when a classifier is trained on a set of samples (e.g. a training set during cross-validation) and predictions are made on the same set of samples.
 
 --
 
@@ -242,6 +248,18 @@ class: segue-red
 class: segue-red
 
 # Part 3: Concluding Remarks
+
+---
+
+## Package Installation
+
+1. Visit the package web page [https://bioconductor.org/packages/ClassifyR/](https://bioconductor.org/packages/ClassifyR/).
+
+2. Simply copy and paste the commands from the Installation section into an active R session.
+
+.center[
+![](images/install.png)
+]
 
 ---
 
